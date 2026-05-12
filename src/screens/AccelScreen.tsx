@@ -13,9 +13,15 @@ import {
 } from 'react-native';
 import { calculateShakesNeeded, unlockApp } from '../services/auth';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
-import Svg, { Circle } from 'react-native-svg';
+import Svg, { Circle, Path } from 'react-native-svg';
 
 const { width } = Dimensions.get('window');
+
+const CheckIconSvg = ({ color }: { color: string }) => (
+  <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M20 6L9 17l-5-5" />
+  </Svg>
+);
 const CIRCLE_SIZE = width * 0.8;
 const STROKE_WIDTH = 10;
 const RADIUS = (CIRCLE_SIZE - STROKE_WIDTH) / 2;
@@ -190,9 +196,12 @@ export default function AccelScreen({ onSuccess, onBack }: any) {
 
       <View style={styles.bottomSection}>
         <View style={[styles.statusPill, { backgroundColor: success ? theme.success : theme.card, borderColor: theme.border, borderWidth: 1 }]}>
-          <Text style={[styles.statusText, { color: success ? '#fff' : theme.text }]}>
-            {success ? '✓ TERMINÉ' : `${required - shakeCount} secousses`}
-          </Text>
+          <View style={styles.pillContent}>
+            {success && <CheckIconSvg color="#fff" />}
+            <Text style={[styles.statusText, { color: success ? '#fff' : theme.text }]}>
+              {success ? 'TERMINÉ' : `${required - shakeCount} secousses`}
+            </Text>
+          </View>
         </View>
       </View>
     </Animated.View>
@@ -238,6 +247,11 @@ const styles = StyleSheet.create({
   countLabel: { fontSize: 13, fontWeight: '700', marginTop: -2 },
   bottomSection: { marginBottom: 60, alignItems: 'center' },
   statusPill: { paddingVertical: 14, paddingHorizontal: 32, borderRadius: 30 },
+  pillContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   statusText: { fontSize: 15, fontWeight: '800', letterSpacing: 0.5 },
 });
 

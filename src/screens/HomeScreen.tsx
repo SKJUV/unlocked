@@ -8,7 +8,22 @@ import {
   StatusBar
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Path, Rect } from 'react-native-svg';
 import { lockApp } from '../services/auth';
+
+const UnlockIconSvg = ({ color }: { color: string }) => (
+  <Svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <Rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+    <Path d="M7 11V7a5 5 0 0 1 9.9-1" />
+  </Svg>
+);
+
+const LockIconSvg = ({ color }: { color: string }) => (
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <Rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+    <Path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  </Svg>
+);
 
 export default function HomeScreen({ onLock }: any) {
   const isDarkMode = useColorScheme() === 'dark';
@@ -20,7 +35,9 @@ export default function HomeScreen({ onLock }: any) {
       
       <View style={styles.content}>
         <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
-          <Text style={styles.icon}>🔓</Text>
+          <View style={styles.iconContainer}>
+            <UnlockIconSvg color={theme.text} />
+          </View>
           <Text style={[styles.title, { color: theme.text }]}>Déverrouillé</Text>
           <Text style={[styles.subtitle, { color: theme.textMuted }]}>
             Vous avez accès à toutes les fonctionnalités de l'application.
@@ -35,7 +52,10 @@ export default function HomeScreen({ onLock }: any) {
           }}
           activeOpacity={0.8}
         >
-          <Text style={styles.buttonText}>🔒 Verrouiller maintenant</Text>
+          <View style={styles.buttonContent}>
+            <LockIconSvg color="#fff" />
+            <Text style={styles.buttonText}>Verrouiller maintenant</Text>
+          </View>
         </TouchableOpacity>
       </View>
       
@@ -89,9 +109,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 20,
   },
-  icon: {
-    fontSize: 48,
+  iconContainer: {
     marginBottom: 20,
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   title: { 
     fontSize: 28, 
