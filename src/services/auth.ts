@@ -7,15 +7,52 @@
 // Variable globale: dit si l'app est verrouillée ou pas
 let isLocked = true;
 
+import { Alert } from 'react-native';
+import ReactNativeBiometrics, { BiometryTypes } from 'react-native-biometrics';
+
+const rnBiometrics = new ReactNativeBiometrics();
+
 // ============================================
 // 1️⃣ LA BIOMÉTRIE (Empreinte digitale)
 // ============================================
-// Cette fonction simule l'authentification par empreinte digitale
-// En production, ça se connecterait à la vraie biométrie du téléphone
-// Pour l'école, on simule juste que ça fonctionne toujours ✅
+// Cette fonction utilise le capteur réel du téléphone!
 export async function authenticateBiometric(): Promise<boolean> {
-  console.log('✅ Biométrie OK - L\'utilisateur a scanné son doigt');
-  return true; // true = succès, false = échoué
+  try {
+    console.log('⏳ Vérification de la disponibilité de la biométrie...');
+    
+    // 1. Vérifier si la biométrie est disponible sur ce téléphone
+    const { available, biometryType } = await rnBiometrics.isSensorAvailable();
+    
+    if (available && (biometryType === BiometryTypes.Biometrics || biometryType === BiometryTypes.TouchID)) {
+      console.log('✅ Capteur d\'empreinte disponible');
+    } else if (available && biometryType === BiometryTypes.FaceID) {
+      console.log('✅ FaceID disponible');
+    } else if (available) {
+      console.log(`✅ Biométrie disponible (${biometryType})`);
+    } else {
+      console.log('❌ Biométrie non disponible sur cet appareil');
+      Alert.alert('Erreur', 'La biométrie n\'est pas disponible sur ce téléphone.');
+      return false;
+    }
+
+    // 2. Demander l'authentification
+    const result = await rnBiometrics.simplePrompt({
+      promptMessage: 'Scanner votre empreinte pour déverrouiller',
+      cancelButtonText: 'Annuler',
+    });
+
+    if (result.success) {
+      console.log('🔓 Authentification réussie!');
+      return true;
+    } else {
+      console.log('❌ Authentification annulée ou échouée');
+      return false;
+    }
+  } catch (error) {
+    console.error('⚠️ Erreur biométrie:', error);
+    Alert.alert('Erreur', 'Une erreur est survenue lors de l\'authentification.');
+    return false;
+  }
 }
 
 // ============================================

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { authenticateBiometric } from '../services/auth';
 
 // ============================================
 // 🔒 ÉCRAN DE VERROUILLAGE (BINÔME 01)
@@ -24,14 +25,18 @@ export default function LockScreen({ onBio, onAccel }: any) {
     // 1. On affiche un spinner ⏳
     setLoading(true);
     
-    // 2. On simule un délai de 500ms (pour faire réaliste)
-    setTimeout(() => {
-      // 3. On enlève le spinner
+    // 2. On appelle le service de biométrie
+    const success = await authenticateBiometric();
+    
+    if (success) {
+      // 3. On simule un petit délai pour le "scan"
+      setTimeout(() => {
+        setLoading(false);
+        onBio?.();
+      }, 500);
+    } else {
       setLoading(false);
-      
-      // 4. On appelle la fonction onBio() qui va naviguer vers HomeScreen
-      onBio?.();
-    }, 500);
+    }
   };
 
   return (
@@ -47,7 +52,7 @@ export default function LockScreen({ onBio, onAccel }: any) {
       <TouchableOpacity 
         style={styles.button}
         onPress={handleBio}
-        disabled={loading} {/* Désactiver pendant le chargement */}
+        disabled={loading}
       >
         <Text style={styles.buttonText}>
           {/* Si on charge, montrer ⏳, sinon montrer 👆 */}

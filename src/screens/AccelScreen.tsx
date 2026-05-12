@@ -1,98 +1,68 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Vibration } from 'react-native';
-import { accelerometer } from 'react-native-sensors';
-import { calculateShakesNeeded } from '../services/auth';
+import { View, Text, TouchableOpacity, StyleSheet, Vibration, NativeModules, DeviceEventEmitter } from 'react-native';
+import { calculateShakesNeeded, unlockApp } from '../services/auth';
 
 // ============================================
 // 📱 ÉCRAN ACCÉLÉROMÈTRE (BINÔME 02)
 // ============================================
-// Cet écran s'affiche quand l'utilisateur clique "Secouer"
-// On écoute le capteur d'accélération du téléphone
-// Chaque secousse = 1 vibration + compteur +1
-// Quand le compteur atteint le nombre requis du jour → DÉVERROUILLÉ!
-//
-// Props reçues:
-//   - onSuccess: fonction appelée quand assez de secousses sont détectées
-//   - onBack: fonction appelée pour retourner à l'écran de verrouillage
+// ... (rest of comments unchanged)
 
 export default function AccelScreen({ onSuccess, onBack }: any) {
   // ============================================
   // ÉTATS
   // ============================================
-  // Nombre de secousses détectées jusqu'à présent
   const [shakeCount, setShakeCount] = useState(0);
-  
-  // Nombre de secousses REQUISES (selon la formule du jour)
   const [required, setRequired] = useState(0);
-  
-  // true si on a atteint le nombre de secousses requis
   const [success, setSuccess] = useState(false);
 
-  // ============================================
   // ÉTAPE 1: Calculer combien de secousses sont nécessaires
-  // ============================================
   useEffect(() => {
-    // Récupérer le jour d'aujourd'hui (0=dimanche, 1=lundi...)
-    const day = new Date().getDay() || 7;
-    
-    // Appliquer la formule: (jour)² mod 5
-    const req = (day * day) % 5;
-    
-    // Sauvegarder le nombre requis
+    const req = calculateShakesNeeded();
     setRequired(req);
-  }, []); // [] = s'exécute UNE FOIS au montage
+  }, []);
 
-  // ============================================
   // ÉTAPE 2: ÉCOUTER LE CAPTEUR D'ACCÉLÉRATION
-  // ============================================
   useEffect(() => {
-    // Timestamp de la dernière secousse détectée
-    let lastTime = 0;
-    
-    // S'abonner aux données de l'accéléromètre
-    const subscription = accelerometer.subscribe(({ x, y, z }: any) => {
-      // Calculer la magnitude (force) de la secousse
-      // C'est la racine carrée de (x² + y² + z²)
+    if (success) return;
+
+    const sensorModule = NativeModules.RNSensorsAccelerometer;
+    if (!sensorModule) {
+      console.error('❌ Module RNSensorsAccelerometer non trouvé');
+      return;
+    }
+
+    // Configurer et démarrer le capteur manuellement
+    console.log('⏳ Démarrage manuel du capteur...');
+    sensorModule.setUpdateInterval(50);
+    sensorModule.startUpdates();
+
+    // Écouter via DeviceEventEmitter (plus robuste que NativeEventEmitter sur New Arch)
+    const subscription = DeviceEventEmitter.addListener('RNSensorsAccelerometer', (data: any) => {
+      const { x, y, z } = data;
       const magnitude = Math.sqrt(x * x + y * y + z * z);
       
-      // ============================================
-      // DÉTECTION: Est-ce vraiment une secousse?
-      // ============================================
-      // Si magnitude > 3, c'est une secousse assez forte
-      if (magnitude > 3) {
-        // Récupérer l'heure actuelle
-        const now = Date.now();
-        
-        // Ignorer les secousses trop rapprochées (moins de 300ms)
-        // Sinon on compterait plusieurs fois la même secousse
-        if (now - lastTime > 300) {
-          // ✅ C'est une vraie secousse!
-          
-          // 1. Faire vibrer le téléphone (retour haptique)
-          Vibration.vibrate(100);
-          
-          // 2. Incrémenter le compteur
-          setShakeCount(prev => {
-            const newCount = prev + 1;
-            
-            // 3. Vérifier si on a atteint le nombre requis
-            if (newCount >= required) {
-              setSuccess(true);
-              onSuccess?.(); // Déverrouiller l'app
-            }
-            
-            return newCount;
-          });
-          
-          // 4. Mettre à jour le timestamp
-          lastTime = now;
-        }
+
+      // Seuil de détection (15 = mouvement volontaire)
+      if (magnitude > 15) {
+        Vibration.vibrate(100);
+        setShakeCount(prev => {
+          const newCount = prev + 1;
+          if (newCount >= required) {
+            setSuccess(true);
+            unlockApp();
+            setTimeout(() => onSuccess?.(), 800);
+          }
+          return newCount;
+        });
       }
     });
 
-    // Fonction de nettoyage: arrêter d'écouter quand le composant disparaît
-    return () => subscription.unsubscribe();
-  }, [required, onSuccess]);
+    return () => {
+      console.log('⏹️ Arrêt du capteur');
+      sensorModule.stopUpdates();
+      subscription.remove();
+    };
+  }, [required, onSuccess, success]);
 
   // ============================================
   // CAS SPÉCIAL: VENDREDI (0 secousses)
@@ -104,7 +74,13 @@ export default function AccelScreen({ onSuccess, onBack }: any) {
       <View style={styles.container}>
         <Text style={styles.title}>📱 Vendredi!</Text>
         <Text style={styles.info}>0 secousses requises 😎</Text>
-        <TouchableOpacity style={styles.button} onPress={() => onSuccess?.()}>
+        <TouchableOpacity 
+          style={styles.button} 
+          onPress={() => {
+            unlockApp();
+            onSuccess?.();
+          }}
+        >
           <Text style={styles.buttonText}>✅ Déverrouiller</Text>
         </TouchableOpacity>
       </View>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { lockApp } from '../services/auth';
 
 // ============================================
 // ✅ ÉCRAN D'ACCUEIL (BINÔME 04)
@@ -27,7 +28,13 @@ export default function HomeScreen({ onLock }: any) {
       {/* ============================================ */}
       {/* BOUTON REVERROUILLER */}
       {/* ============================================ */}
-      <TouchableOpacity style={styles.button} onPress={onLock}>
+      <TouchableOpacity 
+        style={styles.button} 
+        onPress={() => {
+          lockApp(); // Mettre à jour l'état global
+          onLock?.(); // Naviguer vers LockScreen
+        }}
+      >
         <Text style={styles.buttonText}>🔒 Verrouiller</Text>
       </TouchableOpacity>
     </View>

@@ -65,23 +65,23 @@ export default function App() {
       {/* SI screen === 'lock', afficher LockScreen */}
       {screen === 'lock' && (
         <LockScreen 
-          onBio={handleUnlock}    {/* Click biométrie → home */}
-          onAccel={handleAccel}   {/* Click secouer → accel */}
+          onBio={handleUnlock}
+          onAccel={handleAccel}
         />
       )}
 
       {/* SI screen === 'accel', afficher AccelScreen */}
       {screen === 'accel' && (
         <AccelScreen 
-          onSuccess={handleUnlock} {/* Secousses OK → home */}
-          onBack={handleLock}      {/* Click retour → lock */}
+          onSuccess={handleUnlock}
+          onBack={handleLock}
         />
       )}
 
       {/* SI screen === 'home', afficher HomeScreen */}
       {screen === 'home' && (
         <HomeScreen 
-          onLock={handleLock}     {/* Click verrouiller → lock */}
+          onLock={handleLock}
         />
       )}
     </View>
