@@ -14,26 +14,6 @@ import { authenticateBiometric } from '../services/auth';
 const { width } = Dimensions.get('window');
 
 // --- ICONS ---
-const FingerprintIcon = ({ color }: { color: string }) => (
-  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <Path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.02-.3 3" />
-    <Path d="M7 10.73c0-2.6 2.24-4.73 5-4.73s5 2.13 5 4.73c0 1.02-.1 2.02-.3 3" />
-    <Path d="M12 2c-5.52 0-10 4.48-10 10 0 1.02.1 2.02.3 3" />
-    <Path d="M12 14c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5c0 1.02.1 2.02.3 3" />
-    <Path d="M17 10.73c0-2.6 2.24-4.73 5-4.73" />
-    <Path d="M12 18c-2.76 0-5-2.24-5-5" />
-  </Svg>
-);
-
-const ShakeIcon = ({ color }: { color: string }) => (
-  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <Rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
-    <Path d="M12 18h.01" />
-    <Path d="M2 8l2 2-2 2" />
-    <Path d="M22 8l-2 2 2 2" />
-  </Svg>
-);
-
 const LockIconSvg = ({ color }: { color: string }) => (
   <Svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <Rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
@@ -83,10 +63,10 @@ export default function LockScreen({ onBio, onAccel }: any) {
         >
           <View style={styles.buttonContent}>
             {loading ? (
-              <Text style={styles.buttonText}>Vérification...</Text>
+              <Text style={styles.buttonText}>⏳ Vérification...</Text>
             ) : (
               <>
-                <FingerprintIcon color="#fff" />
+                <Text style={styles.emojiIcon}>🫆     </Text>
                 <Text style={styles.buttonText}>Biométrie</Text>
               </>
             )}
@@ -105,7 +85,7 @@ export default function LockScreen({ onBio, onAccel }: any) {
           activeOpacity={0.7}
         >
           <View style={styles.buttonContent}>
-            <ShakeIcon color={theme.text} />
+            <Text style={styles.emojiIcon}>📳</Text>
             <Text style={[styles.buttonText, { color: theme.text }]}>Secouer</Text>
           </View>
         </TouchableOpacity>
@@ -196,7 +176,13 @@ const styles = StyleSheet.create({
   buttonContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    justifyContent: 'center',
+    gap: 10,
+    transform: [{ translateX: -15 }], // Force le décalage vers la gauche
+  },
+  emojiIcon: {
+    fontSize: 22,
+    marginTop: 2, // Ajustement vertical si l'émoji semble "en dessous" du texte
   },
   secondaryButton: {
     borderWidth: 1,
