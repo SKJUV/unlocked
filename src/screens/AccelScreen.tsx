@@ -97,11 +97,19 @@ export default function AccelScreen({ onSuccess, onBack }: any) {
   const checkShakeStatus = () => {
     const { x, y, z } = lastAccel.current;
     const { x: gx, y: gy, z: gz } = lastGyro.current;
+    
+    // Calcul des magnitudes
     const magnitudeAccel = Math.sqrt(x * x + y * y + z * z);
     const magnitudeGyro = Math.sqrt(gx * gx + gy * gy + gz * gz);
     const now = Date.now();
 
-    if (magnitudeAccel > 16 && magnitudeGyro > 3 && (now - lastShakeTime.current > 300)) {
+    // Seuil de détection assoupli :
+    // - Accélération > 14 (mouvement plus souple)
+    // - On autorise la détection même sans gyroscope (si gyro = 0 car absent)
+    const isShakingLinear = magnitudeAccel > 14;
+    const isRotating = magnitudeGyro > 1.5 || magnitudeGyro === 0; // Fallback si pas de gyro
+
+    if (isShakingLinear && isRotating && (now - lastShakeTime.current > 300)) {
       lastShakeTime.current = now;
       handleShake();
     }
