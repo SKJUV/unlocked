@@ -9,8 +9,10 @@ let isLocked = true;
 
 import { Alert } from 'react-native';
 import ReactNativeBiometrics, { BiometryTypes } from 'react-native-biometrics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const rnBiometrics = new ReactNativeBiometrics();
+const UNLOCK_KEY = '@unlocked_today';
 
 // ============================================
 // 1️⃣ LA BIOMÉTRIE (Empreinte digitale)
@@ -94,6 +96,7 @@ export function isAppLocked(): boolean {
 // Déverrouille l'app (après succès de biométrie ou secousses)
 export function unlockApp(): void {
   isLocked = false;
+  markAsUnlockedToday();
   console.log('🔓 L\'app est maintenant DÉVERROUILLÉE');
 }
 
@@ -101,4 +104,28 @@ export function unlockApp(): void {
 export function lockApp(): void {
   isLocked = true;
   console.log('🔒 L\'app est maintenant VERROUILLÉE');
+}
+
+// Persistance: Déverrouillage pour la journée
+export async function checkIfUnlockedToday(): Promise<boolean> {
+  try {
+    const today = new Date().toDateString();
+    const savedDate = await AsyncStorage.getItem(UNLOCK_KEY);
+    if (savedDate === today) {
+      isLocked = false;
+      return true;
+    }
+    return false;
+  } catch (e) {
+    return false;
+  }
+}
+
+async function markAsUnlockedToday(): Promise<void> {
+  try {
+    const today = new Date().toDateString();
+    await AsyncStorage.setItem(UNLOCK_KEY, today);
+  } catch (e) {
+    console.error('Failed to save unlock state', e);
+  }
 }

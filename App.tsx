@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View } from 'react-native';
 import LockScreen from './src/screens/LockScreen';
 import AccelScreen from './src/screens/AccelScreen';
 import HomeScreen from './src/screens/HomeScreen';
+import { checkIfUnlockedToday } from './src/services/auth';
 
 // ============================================
 // 🎬 COMPOSANT PRINCIPAL (BINÔME 04)
@@ -22,6 +23,15 @@ export default function App() {
   // ============================================
   // Au démarrage, on affiche 'lock' (l'app est verrouillée par défaut)
   const [screen, setScreen] = useState<'lock' | 'home' | 'accel'>('lock');
+
+  // Vérifier au démarrage si l'app a déjà été déverrouillée aujourd'hui
+  useEffect(() => {
+    checkIfUnlockedToday().then(unlocked => {
+      if (unlocked) {
+        setScreen('home');
+      }
+    });
+  }, []);
 
   // ============================================
   // FONCTION 1: Déverrouiller et aller à l'accueil

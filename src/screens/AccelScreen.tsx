@@ -1,94 +1,131 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, NativeModules, DeviceEventEmitter, Dimensions, Animated, Easing } from 'react-native';
+import { 
+  View, 
+  Text, 
+  TouchableOpacity, 
+  StyleSheet, 
+  NativeModules, 
+  DeviceEventEmitter, 
+  Dimensions, 
+  Animated, 
+  useColorScheme,
+  StatusBar
+} from 'react-native';
 import { calculateShakesNeeded, unlockApp } from '../services/auth';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import Svg, { Circle } from 'react-native-svg';
 
 const { width } = Dimensions.get('window');
-const CIRCLE_SIZE = width * 0.7;
-const STROKE_WIDTH = 12;
+const CIRCLE_SIZE = width * 0.8;
+const STROKE_WIDTH = 10;
 const RADIUS = (CIRCLE_SIZE - STROKE_WIDTH) / 2;
 const CIRCUMFERENCE = RADIUS * 2 * Math.PI;
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
+const DAYS = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+
 // ============================================
-// 📱 ÉCRAN ACCÉLÉROMÈTRE (BINÔME 02) - VERSION LÉGÈRE (CORE ANIMATED)
+// 📱 ÉCRAN ACCÉLÉROMÈTRE (BINÔME 02) - VERSION V3 (FIX)
 // ============================================
 
 export default function AccelScreen({ onSuccess, onBack }: any) {
+  const isDarkMode = useColorScheme() === 'dark';
+  const theme = isDarkMode ? DarkTheme : LightTheme;
+
   const [shakeCount, setShakeCount] = useState(0);
   const [required, setRequired] = useState(0);
   const [success, setSuccess] = useState(false);
+  
+  const lastAccel = useRef({ x: 0, y: 0, z: 0 });
+  const lastGyro = useRef({ x: 0, y: 0, z: 0 });
+  const lastShakeTime = useRef(0);
 
-  // Animations (Standard API)
+  // Animations
   const shakeAnim = useRef(new Animated.Value(0)).current;
   const progressAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  // ÉTAPE 1: Initialisation
   useEffect(() => {
     const req = calculateShakesNeeded();
     setRequired(req);
-    progressAnim.setValue(0);
+    
+    // Démarrer l'apparition
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
+
+    if (req === 0) {
+      handleSuccess();
+    }
   }, []);
 
-  // ÉTAPE 2: ÉCOUTER LE CAPTEUR
   useEffect(() => {
-    if (success) return;
+    if (success || required === 0) return;
 
-    const sensorModule = NativeModules.RNSensorsAccelerometer;
-    if (!sensorModule) return;
+    const accelModule = NativeModules.RNSensorsAccelerometer;
+    const gyroModule = NativeModules.RNSensorsGyroscope;
 
-    sensorModule.setUpdateInterval(50);
-    sensorModule.startUpdates();
+    if (!accelModule || !gyroModule) return;
 
-    const subscription = DeviceEventEmitter.addListener('RNSensorsAccelerometer', (data: any) => {
-      const { x, y, z } = data;
-      const magnitude = Math.sqrt(x * x + y * y + z * z);
-      
-      if (magnitude > 15) {
-        handleShake();
-      }
+    accelModule.setUpdateInterval(50);
+    gyroModule.setUpdateInterval(50);
+    accelModule.startUpdates();
+    gyroModule.startUpdates();
+
+    const subAccel = DeviceEventEmitter.addListener('RNSensorsAccelerometer', (data) => {
+      lastAccel.current = data;
+      checkShakeStatus();
+    });
+
+    const subGyro = DeviceEventEmitter.addListener('RNSensorsGyroscope', (data) => {
+      lastGyro.current = data;
+      checkShakeStatus();
     });
 
     return () => {
-      sensorModule.stopUpdates();
-      subscription.remove();
+      accelModule.stopUpdates();
+      gyroModule.stopUpdates();
+      subAccel.remove();
+      subGyro.remove();
     };
   }, [required, success]);
 
+  const checkShakeStatus = () => {
+    const { x, y, z } = lastAccel.current;
+    const { x: gx, y: gy, z: gz } = lastGyro.current;
+    const magnitudeAccel = Math.sqrt(x * x + y * y + z * z);
+    const magnitudeGyro = Math.sqrt(gx * gx + gy * gy + gz * gz);
+    const now = Date.now();
+
+    if (magnitudeAccel > 16 && magnitudeGyro > 3 && (now - lastShakeTime.current > 300)) {
+      lastShakeTime.current = now;
+      handleShake();
+    }
+  };
+
   const handleShake = () => {
-    // 📳 Haptic Feedback (Impact Medium)
-    ReactNativeHapticFeedback.trigger('impactMedium');
+    ReactNativeHapticFeedback.trigger('impactHeavy');
 
-    // 🎬 Animation de secousse (Standard API)
-    Animated.sequence([
-      Animated.timing(shakeAnim, { toValue: -15, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 15, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
-    ]).start();
-
-    Animated.sequence([
-      Animated.spring(scaleAnim, { toValue: 1.2, friction: 3, useNativeDriver: true }),
-      Animated.spring(scaleAnim, { toValue: 1, friction: 3, useNativeDriver: true }),
+    Animated.parallel([
+      Animated.sequence([
+        Animated.timing(shakeAnim, { toValue: -20, duration: 40, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: 20, duration: 40, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: 0, duration: 40, useNativeDriver: true }),
+      ]),
+      Animated.sequence([
+        Animated.spring(scaleAnim, { toValue: 1.15, friction: 2, useNativeDriver: true }),
+        Animated.spring(scaleAnim, { toValue: 1, friction: 2, useNativeDriver: true }),
+      ])
     ]).start();
 
     setShakeCount(prev => {
       const newCount = prev + 1;
-      
-      // Mettre à jour la jauge
-      Animated.timing(progressAnim, {
-        toValue: newCount / required,
-        duration: 200,
-        useNativeDriver: false, // strokeDashoffset n'est pas supporté par native driver
-      }).start();
-
-      if (newCount >= required) {
-        handleSuccess();
-      }
+      Animated.spring(progressAnim, { toValue: newCount / required, friction: 5, useNativeDriver: false }).start();
+      if (newCount >= required) handleSuccess();
       return newCount;
     });
   };
@@ -97,195 +134,96 @@ export default function AccelScreen({ onSuccess, onBack }: any) {
     setSuccess(true);
     unlockApp();
     ReactNativeHapticFeedback.trigger('notificationSuccess');
-    setTimeout(() => onSuccess?.(), 1500);
+    setTimeout(() => onSuccess?.(), 1000);
   };
 
-  // Interpolations
   const strokeDashoffset = progressAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [CIRCUMFERENCE, 0],
   });
 
-  if (required === 0) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.title}>📱 Vendredi!</Text>
-        <TouchableOpacity style={styles.button} onPress={handleSuccess}>
-          <Text style={styles.buttonText}>✅ Déverrouiller</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  const currentDayName = DAYS[new Date().getDay()];
 
   return (
-    <View style={styles.container}>
-      <TouchableOpacity style={styles.backButton} onPress={onBack}>
-        <Text style={styles.backText}>← Annuler</Text>
-      </TouchableOpacity>
-
-      <Text style={styles.title}>Défi Secousse</Text>
-      <Text style={styles.subtitle}>Secouez énergiquement votre téléphone</Text>
-
-      <View style={styles.progressContainer}>
-        <Svg width={CIRCLE_SIZE} height={CIRCLE_SIZE} style={styles.svg}>
-          <Circle
-            cx={CIRCLE_SIZE / 2}
-            cy={CIRCLE_SIZE / 2}
-            r={RADIUS}
-            stroke="#1e293b"
-            strokeWidth={STROKE_WIDTH}
-            fill="transparent"
-          />
-          <AnimatedCircle
-            cx={CIRCLE_SIZE / 2}
-            cy={CIRCLE_SIZE / 2}
-            r={RADIUS}
-            stroke="#3b82f6"
-            strokeWidth={STROKE_WIDTH}
-            fill="transparent"
-            strokeDasharray={CIRCUMFERENCE}
-            strokeDashoffset={strokeDashoffset}
-            strokeLinecap="round"
-            rotation="-90"
-            origin={`${CIRCLE_SIZE / 2}, ${CIRCLE_SIZE / 2}`}
-          />
-        </Svg>
-        
-        <Animated.View style={[
-          styles.phoneWrapper, 
-          { transform: [{ translateX: shakeAnim }, { scale: scaleAnim }] }
-        ]}>
-          <View style={styles.phoneIcon}>
-            <View style={styles.phoneSpeaker} />
-            <Text style={styles.countText}>{shakeCount}</Text>
-            <Text style={styles.totalText}>sur {required}</Text>
-            <View style={styles.phoneButton} />
-          </View>
-        </Animated.View>
+    <Animated.View style={[styles.container, { backgroundColor: theme.bg, opacity: fadeAnim }]}>
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+      
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={onBack}>
+          <Text style={[styles.backText, { color: theme.textMuted }]}>Annuler</Text>
+        </TouchableOpacity>
+        <Text style={[styles.dayText, { color: theme.primary }]}>{currentDayName}</Text>
       </View>
 
-      <View style={styles.statusBox}>
-        <Text style={styles.statusText}>
-          {success ? '✨ RÉUSSI !' : `Encore ${required - shakeCount} pour ouvrir`}
+      <View style={styles.topSection}>
+        <Text style={[styles.title, { color: theme.text }]}>Sécurité</Text>
+        <Text style={[styles.subtitle, { color: theme.textMuted }]}>
+          Secouez pour confirmer
         </Text>
       </View>
-    </View>
+
+      <View style={styles.centerSection}>
+        <View style={styles.visualizerContainer}>
+          <Svg width={CIRCLE_SIZE} height={CIRCLE_SIZE}>
+            <Circle cx={CIRCLE_SIZE / 2} cy={CIRCLE_SIZE / 2} r={RADIUS} stroke={theme.card} strokeWidth={STROKE_WIDTH} fill="transparent" />
+            <AnimatedCircle
+              cx={CIRCLE_SIZE / 2}
+              cy={CIRCLE_SIZE / 2}
+              r={RADIUS}
+              stroke={theme.primary}
+              strokeWidth={STROKE_WIDTH}
+              fill="transparent"
+              strokeDasharray={CIRCUMFERENCE}
+              strokeDashoffset={strokeDashoffset}
+              strokeLinecap="round"
+              rotation="-90"
+              origin={`${CIRCLE_SIZE / 2}, ${CIRCLE_SIZE / 2}`}
+            />
+          </Svg>
+
+          <Animated.View style={[styles.iconWrapper, { transform: [{ translateX: shakeAnim }, { scale: scaleAnim }] }]}>
+            <View style={[styles.deviceFrame, { borderColor: theme.border, backgroundColor: theme.card }]}>
+              <View style={[styles.deviceSpeaker, { backgroundColor: theme.border }]} />
+              <Text style={[styles.countValue, { color: theme.primary }]}>{shakeCount}</Text>
+              <Text style={[styles.countLabel, { color: theme.textMuted }]}>sur {required}</Text>
+              <View style={[styles.deviceButton, { borderColor: theme.border }]} />
+            </View>
+          </Animated.View>
+        </View>
+      </View>
+
+      <View style={styles.bottomSection}>
+        <View style={[styles.statusPill, { backgroundColor: success ? theme.success : theme.card }]}>
+          <Text style={[styles.statusText, { color: success ? '#fff' : theme.text }]}>
+            {success ? '✓ TERMINÉ' : `${required - shakeCount} restants`}
+          </Text>
+        </View>
+      </View>
+    </Animated.View>
   );
 }
 
+const LightTheme = { bg: '#F8FAFC', card: '#FFFFFF', text: '#0F172A', textMuted: '#64748B', primary: '#2563EB', border: '#E2E8F0', success: '#10B981' };
+const DarkTheme = { bg: '#0F172A', card: '#1E293B', text: '#F8FAFC', textMuted: '#94A3B8', primary: '#3B82F6', border: '#334155', success: '#059669' };
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0f172a',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  backButton: {
-    position: 'absolute',
-    top: 50,
-    left: 20,
-    padding: 10,
-  },
-  backText: {
-    color: '#94a3b8',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: '#f8fafc',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#64748b',
-    marginBottom: 50,
-    textAlign: 'center',
-  },
-  progressContainer: {
-    width: CIRCLE_SIZE,
-    height: CIRCLE_SIZE,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  svg: {
-    position: 'absolute',
-  },
-  phoneWrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  phoneIcon: {
-    width: 100,
-    height: 170,
-    backgroundColor: '#1e293b',
-    borderRadius: 20,
-    borderWidth: 4,
-    borderColor: '#334155',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#3b82f6',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  phoneSpeaker: {
-    width: 40,
-    height: 5,
-    backgroundColor: '#334155',
-    borderRadius: 2.5,
-    position: 'absolute',
-    top: 12,
-  },
-  phoneButton: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    borderWidth: 3,
-    borderColor: '#334155',
-    position: 'absolute',
-    bottom: 12,
-  },
-  countText: {
-    fontSize: 42,
-    fontWeight: '900',
-    color: '#3b82f6',
-  },
-  totalText: {
-    fontSize: 14,
-    color: '#64748b',
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  statusBox: {
-    marginTop: 60,
-    paddingVertical: 18,
-    paddingHorizontal: 35,
-    backgroundColor: '#1e293b',
-    borderRadius: 40,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  statusText: {
-    color: '#f8fafc',
-    fontSize: 18,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  button: {
-    backgroundColor: '#3b82f6',
-    paddingVertical: 18,
-    paddingHorizontal: 45,
-    borderRadius: 15,
-    elevation: 8,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 20,
-    fontWeight: '800',
-  },
+  container: { flex: 1, paddingHorizontal: 24 },
+  header: { marginTop: 60, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  backButton: { padding: 8, marginLeft: -8 },
+  backText: { fontSize: 16, fontWeight: '600' },
+  dayText: { fontSize: 14, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
+  topSection: { marginTop: 40, alignItems: 'center' },
+  title: { fontSize: 32, fontWeight: '900' },
+  subtitle: { fontSize: 16, textAlign: 'center', marginTop: 12, maxWidth: '80%' },
+  centerSection: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  visualizerContainer: { width: CIRCLE_SIZE, height: CIRCLE_SIZE, justifyContent: 'center', alignItems: 'center' },
+  iconWrapper: { position: 'absolute' },
+  deviceFrame: { width: 110, height: 190, borderRadius: 24, borderWidth: 4, alignItems: 'center', justifyContent: 'center' },
+  deviceSpeaker: { width: 40, height: 4, borderRadius: 2, position: 'absolute', top: 15 },
+  deviceButton: { width: 34, height: 34, borderRadius: 17, borderWidth: 2, position: 'absolute', bottom: 12 },
+  countValue: { fontSize: 48, fontWeight: '900' },
+  countLabel: { fontSize: 14, fontWeight: '700', marginTop: -4 },
+  bottomSection: { marginBottom: 60, alignItems: 'center' },
+  statusPill: { paddingVertical: 14, paddingHorizontal: 28, borderRadius: 30 },
+  statusText: { fontSize: 15, fontWeight: '800' },
 });
