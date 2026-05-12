@@ -64,10 +64,10 @@ Créer `src/screens/LockScreen.tsx` - L'écran de déverrouillage
 ## BINÔME 02 - AccelScreen (Accéléromètre)
 
 ### Votre mission
-Créer `src/screens/AccelScreen.tsx` - Compter les secousses
+Créer `src/screens/AccelScreen.tsx` - Compter les secousses du téléphone
 
 ### C'est quoi?
-Écran qui compte les mouvements du téléphone jusqu'à un certain nombre
+Écran qui compte les mouvements du téléphone jusqu'à un certain nombre.
 
 ### À faire
 1. Attendre que BINÔME 03 signale OK ⏳
@@ -88,11 +88,29 @@ Créer `src/screens/AccelScreen.tsx` - Compter les secousses
 - Délai 300ms = évite de compter un seul gros shake comme 10
 - Vendredi: required === 0 → cas spécial
 
+### TESTER sur AVD vs Téléphone
+
+**Sur AVD (Émulateur):**
+```
+Côté droit de l'écran → Accéléromètre controls
+OU Ctrl + numpad 2/4/6/8 pour secouer
+Doit afficher mouvement dans l'app ✅
+```
+
+**Sur téléphone physique:**
+```
+Secouer PHYSIQUEMENT le téléphone 📱
+Le compteur devrait augmenter ✅
+Vibration ressentie ✅
+```
+
 ### Checklist
 - [ ] Fichier créé
 - [ ] Code copié
 - [ ] Compile sans erreur
-- [ ] Secouer fonctionne ✅
+- [ ] Secouer fonctionne sur votre plateforme (AVD OU téléphone) ✅
+- [ ] Vibration marche ✅
+- [ ] Vendredi = cas spécial ✅
 
 ---
 

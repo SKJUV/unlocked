@@ -1,53 +1,70 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# 📱 Unlocked App - Projet d'école ANDROID (1 jour)
 
-# 📱 Unlocked App - Projet d'école (1 jour)
+Déverrouiller une app Android via **biométrie** ou **accéléromètre**.
 
-Déverrouiller une app via **biométrie** ou **accéléromètre**.
-
-## ⚡ Quick Start
+## ⚡ Quick Start ANDROID
 
 ```bash
-# 1. Installer (15 min)
+# 1. Prérequis (voir doc/SETUP_ANDROID.md)
+echo $ANDROID_HOME   # Doit avoir une valeur
+adb devices          # Doit afficher votre appareil
+
+# 2. Installer npm (15 min)
 npm install
 npm install react-native-sensors react-native-async-storage @react-native-async-storage/async-storage
 
-# 2. iOS (optionnel)
-cd ios && pod install && cd ..
-
-# 3. Lancer
-npm start
+# 3. Lancer sur Android (5 min)
+npm start            # Terminal 1
+npm run android      # Terminal 2
 ```
 
-## 📖 LIRE D'ABORD
+## 📖 LIRE EN PREMIER
 
-**👉 Ouvrez** : `doc/START_HERE.md` ← **C'EST VOTRE PLAN DU JOUR**
+**→ `doc/START_HERE.md`** - Démarrage complet
+
+**→ `doc/QUICK_START_ANDROID.md`** - Commandes exactes
+
+**→ `doc/SETUP_ANDROID.md`** - Configuration Android détaillée
 
 ## 👥 4 Binômes, 4 tâches
 
-| Binôme | Rôle | Fichier |
-|--------|------|---------|
-| **01** | Biométrie UI | `src/screens/LockScreen.tsx` |
-| **02** | Accéléromètre UI | `src/screens/AccelScreen.tsx` |
-| **03** | Services | `src/services/auth.ts` |
-| **04** | Navigation + Home | `App.tsx` + `src/screens/HomeScreen.tsx` |
+| Binôme | Rôle | Fichier | Durée |
+|--------|------|---------|-------|
+| **03** | Services (PRIORITAIRE!) | `src/services/auth.ts` | 20 min |
+| **01** | Écran biométrie | `src/screens/LockScreen.tsx` | 15 min |
+| **02** | Écran accéléromètre | `src/screens/AccelScreen.tsx` | 15 min |
+| **04** | Navigation + accueil | `App.tsx` + `HomeScreen.tsx` | 15 min |
 
-## 🎯 Objectif = 17h00
+## 🎯 Objectif: App fonctionnelle
 
-App fonctionnelle:
-- ✅ Écran de verrouillage
-- ✅ Déverrouiller via biométrie (1 clic)
-- ✅ Déverrouiller via secousses (formule du jour)
-- ✅ Écran accueil
-- ✅ Re-verrouiller
+- ✅ Écran verrouillage (🔒)
+- ✅ Déverrouiller via biométrie (👆)
+- ✅ Déverrouiller via secousses (📱)
+- ✅ Écran accueil (✅)
+- ✅ Re-verrouiller (🔒)
 
-## 🚀 Commandes utiles
+## 🚀 Commandes ANDROID SEULEMENT
 
 ```bash
-npm start          # Démarrer Metro
-npm run android    # Compiler Android
-npm run ios        # Compiler iOS
-npm test           # Tester
+npm start            # Démarrer Metro
+npm run android      # Compiler et lancer sur Android (AVD ou téléphone)
+npm test             # Tester
 ```
+
+**⚠️ iOS n'est PAS supporté dans ce projet. ANDROID SEULEMENT.**
+
+## 📋 Documentation
+
+| Fichier | Contenu | Durée |
+|---------|---------|-------|
+| **START_HERE.md** | Point d'entrée | 5 min |
+| **QUICK_START_ANDROID.md** | Commandes exactes | 3 min |
+| **SETUP_ANDROID.md** | Configuration détaillée | 20 min |
+| **GUIDE_COMPLET.md** | Tous les codes | 10 min |
+| **EXPLICATIONS_BINOMES.md** | Votre rôle précis | 15 min |
+| **FAQ.md** | Questions/réponses | À l'usage |
+
+
 
 ## 📚 Documentation
 
