@@ -1,52 +1,63 @@
 This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
 
-# Getting Started
+# 📱 Unlocked App - Projet d'école (1 jour)
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+Déverrouiller une app via **biométrie** ou **accéléromètre**.
 
-## Step 1: Start Metro
+## ⚡ Quick Start
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+```bash
+# 1. Installer (15 min)
+npm install
+npm install react-native-sensors react-native-async-storage @react-native-async-storage/async-storage
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+# 2. iOS (optionnel)
+cd ios && pod install && cd ..
 
-```sh
-# Using npm
+# 3. Lancer
 npm start
-
-# OR using Yarn
-yarn start
 ```
 
-## Step 2: Build and run your app
+## 📖 LIRE D'ABORD
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+**👉 Ouvrez** : `doc/START_HERE.md` ← **C'EST VOTRE PLAN DU JOUR**
 
-### Android
+## 👥 4 Binômes, 4 tâches
 
-```sh
-# Using npm
-npm run android
+| Binôme | Rôle | Fichier |
+|--------|------|---------|
+| **01** | Biométrie UI | `src/screens/LockScreen.tsx` |
+| **02** | Accéléromètre UI | `src/screens/AccelScreen.tsx` |
+| **03** | Services | `src/services/auth.ts` |
+| **04** | Navigation + Home | `App.tsx` + `src/screens/HomeScreen.tsx` |
 
-# OR using Yarn
-yarn android
+## 🎯 Objectif = 17h00
+
+App fonctionnelle:
+- ✅ Écran de verrouillage
+- ✅ Déverrouiller via biométrie (1 clic)
+- ✅ Déverrouiller via secousses (formule du jour)
+- ✅ Écran accueil
+- ✅ Re-verrouiller
+
+## 🚀 Commandes utiles
+
+```bash
+npm start          # Démarrer Metro
+npm run android    # Compiler Android
+npm run ios        # Compiler iOS
+npm test           # Tester
 ```
 
-### iOS
+## 📚 Documentation
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+- **START_HERE.md** ← Commencez ici! (code + timeline)
+- **INDEX.md** ← Liens importants
+- Autres fichiers = optionnels
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+---
 
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
+**GO GO GO! 1 jour, vous êtes capables! 💪**
 
 For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
 

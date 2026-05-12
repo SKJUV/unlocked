@@ -1,45 +1,89 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import React, { useState } from 'react';
+import { View } from 'react-native';
+import LockScreen from './src/screens/LockScreen';
+import AccelScreen from './src/screens/AccelScreen';
+import HomeScreen from './src/screens/HomeScreen';
 
-import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
-import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
+// ============================================
+// 🎬 COMPOSANT PRINCIPAL (BINÔME 04)
+// ============================================
+// App est le point d'entrée principal de l'application
+// C'est ici qu'on gère la NAVIGATION entre les écrans
+// En fonction de l'état 'screen', on affiche un écran différent
+//
+// Les états possibles:
+//   - 'lock'  = Écran de verrouillage (LockScreen)
+//   - 'home'  = Écran d'accueil (HomeScreen)
+//   - 'accel' = Écran accéléromètre (AccelScreen)
 
-function App() {
-  const isDarkMode = useColorScheme() === 'dark';
+export default function App() {
+  // ============================================
+  // ÉTAT: Quel écran afficher?
+  // ============================================
+  // Au démarrage, on affiche 'lock' (l'app est verrouillée par défaut)
+  const [screen, setScreen] = useState<'lock' | 'home' | 'accel'>('lock');
 
+  // ============================================
+  // FONCTION 1: Déverrouiller et aller à l'accueil
+  // ============================================
+  // Appelée quand:
+  //   - Biométrie réussit (BINÔME 01)
+  //   - Accéléromètre atteint le nombre de secousses (BINÔME 02)
+  const handleUnlock = () => {
+    // Changer l'écran pour 'home'
+    setScreen('home');
+    console.log('✅ Navigation vers HomeScreen');
+  };
+
+  // ============================================
+  // FONCTION 2: Aller à l'écran accéléromètre
+  // ============================================
+  // Appelée quand l'utilisateur clique "Secouer" sur LockScreen
+  const handleAccel = () => {
+    // Changer l'écran pour 'accel'
+    setScreen('accel');
+    console.log('📱 Navigation vers AccelScreen');
+  };
+
+  // ============================================
+  // FONCTION 3: Reverrouiller et revenir à LockScreen
+  // ============================================
+  // Appelée quand:
+  //   - L'utilisateur clique "Verrouiller" (HomeScreen)
+  //   - L'utilisateur clique "Retour" (AccelScreen)
+  const handleLock = () => {
+    // Changer l'écran pour 'lock'
+    setScreen('lock');
+    console.log('🔒 Navigation vers LockScreen');
+  };
+
+  // ============================================
+  // RENDU: Afficher l'écran approprié
+  // ============================================
   return (
-    <SafeAreaProvider>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <AppContent />
-    </SafeAreaProvider>
-  );
-}
+    <View style={{ flex: 1 }}>
+      {/* SI screen === 'lock', afficher LockScreen */}
+      {screen === 'lock' && (
+        <LockScreen 
+          onBio={handleUnlock}    {/* Click biométrie → home */}
+          onAccel={handleAccel}   {/* Click secouer → accel */}
+        />
+      )}
 
-function AppContent() {
-  const safeAreaInsets = useSafeAreaInsets();
+      {/* SI screen === 'accel', afficher AccelScreen */}
+      {screen === 'accel' && (
+        <AccelScreen 
+          onSuccess={handleUnlock} {/* Secousses OK → home */}
+          onBack={handleLock}      {/* Click retour → lock */}
+        />
+      )}
 
-  return (
-    <View style={styles.container}>
-      <NewAppScreen
-        templateFileName="App.tsx"
-        safeAreaInsets={safeAreaInsets}
-      />
+      {/* SI screen === 'home', afficher HomeScreen */}
+      {screen === 'home' && (
+        <HomeScreen 
+          onLock={handleLock}     {/* Click verrouiller → lock */}
+        />
+      )}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});
-
-export default App;
