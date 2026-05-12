@@ -1,35 +1,27 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { 
+  View, 
+  Text, 
+  TouchableOpacity, 
+  StyleSheet, 
+  useColorScheme, 
+  StatusBar,
+  Dimensions
+} from 'react-native';
 import { authenticateBiometric } from '../services/auth';
 
-// ============================================
-// 🔒 ÉCRAN DE VERROUILLAGE (BINÔME 01)
-// ============================================
-// Cet écran s'affiche quand l'app est verrouillée
-// L'utilisateur a 2 choix:
-//   1. Utiliser la biométrie (empreinte digitale)
-//   2. Secouer le téléphone selon la formule du jour
-// 
-// Props reçues:
-//   - onBio: fonction appelée quand biométrie réussit
-//   - onAccel: fonction appelée quand l'utilisateur clique "Secouer"
+const { width } = Dimensions.get('window');
 
 export default function LockScreen({ onBio, onAccel }: any) {
-  // État: dit si on est en train de charger (utile pour le spinner ⏳)
+  const isDarkMode = useColorScheme() === 'dark';
+  const theme = isDarkMode ? DarkTheme : LightTheme;
   const [loading, setLoading] = useState(false);
 
-  // ============================================
-  // Fonction: Quand l'utilisateur clique "Biométrie"
-  // ============================================
   const handleBio = async () => {
-    // 1. On affiche un spinner ⏳
     setLoading(true);
-    
-    // 2. On appelle le service de biométrie
     const success = await authenticateBiometric();
     
     if (success) {
-      // 3. On simule un petit délai pour le "scan"
       setTimeout(() => {
         setLoading(false);
         onBio?.();
@@ -40,79 +32,162 @@ export default function LockScreen({ onBio, onAccel }: any) {
   };
 
   return (
-    <View style={styles.container}>
-      {/* ============================================ */}
-      {/* TITRE */}
-      {/* ============================================ */}
-      <Text style={styles.title}>🔒 Déverrouiller</Text>
-
-      {/* ============================================ */}
-      {/* BOUTON BIOMÉTRIE */}
-      {/* ============================================ */}
-      <TouchableOpacity 
-        style={styles.button}
-        onPress={handleBio}
-        disabled={loading}
-      >
-        <Text style={styles.buttonText}>
-          {/* Si on charge, montrer ⏳, sinon montrer 👆 */}
-          {loading ? '⏳' : '👆'} Biométrie
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+      
+      <View style={styles.topSection}>
+        <View style={[styles.lockIcon, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <Text style={styles.lockEmoji}>🔒</Text>
+        </View>
+        <Text style={[styles.title, { color: theme.text }]}>Déverrouiller</Text>
+        <Text style={[styles.subtitle, { color: theme.textMuted }]}>
+          Choisissez une méthode pour accéder à vos données sécurisées
         </Text>
-      </TouchableOpacity>
+      </View>
 
-      {/* ============================================ */}
-      {/* SÉPARATEUR: "ou" */}
-      {/* ============================================ */}
-      <Text style={styles.or}>ou</Text>
+      <View style={styles.buttonSection}>
+        <TouchableOpacity 
+          style={[styles.button, { backgroundColor: theme.primary }]}
+          onPress={handleBio}
+          disabled={loading}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.buttonText}>
+            {loading ? '⏳ Vérification...' : '👆 Biométrie'}
+          </Text>
+        </TouchableOpacity>
 
-      {/* ============================================ */}
-      {/* BOUTON ACCÉLÉROMÈTRE (SECOUER) */}
-      {/* ============================================ */}
-      <TouchableOpacity style={styles.button} onPress={onAccel}>
-        <Text style={styles.buttonText}>📱 Secouer</Text>
-      </TouchableOpacity>
+        <View style={styles.dividerContainer}>
+          <View style={[styles.line, { backgroundColor: theme.border }]} />
+          <Text style={[styles.or, { color: theme.textMuted }]}>ou</Text>
+          <View style={[styles.line, { backgroundColor: theme.border }]} />
+        </View>
+
+        <TouchableOpacity 
+          style={[styles.button, styles.secondaryButton, { borderColor: theme.border, backgroundColor: theme.card }]} 
+          onPress={onAccel}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.buttonText, { color: theme.text }]}>📱 Secouer</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.footer}>
+        <Text style={[styles.footerText, { color: theme.textMuted }]}>
+          Sécurisé par Unlocked V3
+        </Text>
+      </View>
     </View>
   );
 }
 
-// ============================================
-// STYLES (Design de l'écran)
-// ============================================
+const LightTheme = {
+  bg: '#F8FAFC',
+  card: '#FFFFFF',
+  text: '#0F172A',
+  textMuted: '#64748B',
+  primary: '#3B82F6',
+  border: '#E2E8F0',
+};
+
+const DarkTheme = {
+  bg: '#020617',
+  card: '#0F172A',
+  text: '#F8FAFC',
+  textMuted: '#94A3B8',
+  primary: '#3B82F6',
+  border: '#1E293B',
+};
+
 const styles = StyleSheet.create({
-  // Container: le fond blanc qui remplit tout l'écran
   container: { 
-    flex: 1, // Remplit tout l'espace disponible
-    justifyContent: 'center', // Centre verticalement
-    alignItems: 'center', // Centre horizontalement
-    gap: 20, // Espacement entre les éléments
-    backgroundColor: '#fff' // Fond blanc
+    flex: 1, 
+    paddingHorizontal: 32,
+    justifyContent: 'space-between',
+    paddingVertical: 80,
   },
-  
-  // Titre: "🔒 Déverrouiller"
+  topSection: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  lockIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 24,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+  },
+  lockEmoji: {
+    fontSize: 32,
+  },
   title: { 
-    fontSize: 28, // Grosse taille
-    fontWeight: 'bold' // Texte épais
+    fontSize: 32, 
+    fontWeight: '900',
+    letterSpacing: -0.5,
   },
-  
-  // Boutons: Biométrie et Secouer
+  subtitle: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 12,
+    lineHeight: 22,
+    maxWidth: '90%',
+  },
+  buttonSection: {
+    width: '100%',
+    gap: 16,
+  },
   button: { 
-    backgroundColor: '#007AFF', // Bleu iOS
-    padding: 15, // Rembourrage interne
-    borderRadius: 8, // Coins arrondis
-    width: 220, // Largeur fixe
-    alignItems: 'center' // Centrer le texte
+    height: 60,
+    borderRadius: 16, 
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-  
-  // Texte des boutons
+  secondaryButton: {
+    borderWidth: 1,
+    elevation: 0,
+    shadowOpacity: 0,
+  },
   buttonText: { 
-    color: '#fff', // Blanc
-    fontWeight: 'bold', // Gras
-    fontSize: 16 // Taille moyenne
+    color: '#fff', 
+    fontWeight: '700', 
+    fontSize: 17,
+    letterSpacing: 0.5,
   },
-  
-  // "ou" entre les deux boutons
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 8,
+  },
+  line: {
+    flex: 1,
+    height: 1,
+  },
   or: { 
-    color: '#999', // Gris clair
-    fontSize: 14 // Petit texte
+    marginHorizontal: 16,
+    fontSize: 14,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+  footer: {
+    alignItems: 'center',
+  },
+  footerText: {
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   }
 });
+

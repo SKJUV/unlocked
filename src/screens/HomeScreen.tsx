@@ -1,84 +1,133 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { 
+  View, 
+  Text, 
+  TouchableOpacity, 
+  StyleSheet, 
+  useColorScheme, 
+  StatusBar,
+  SafeAreaView 
+} from 'react-native';
 import { lockApp } from '../services/auth';
 
-// ============================================
-// ✅ ÉCRAN D'ACCUEIL (BINÔME 04)
-// ============================================
-// Cet écran s'affiche après un déverrouillage réussi
-// C'est l'écran principal de l'app une fois déverrouillée
-// L'utilisateur peut juste voir "Bienvenue" ou cliquer "Verrouiller"
-//
-// Props reçues:
-//   - onLock: fonction appelée quand on clique le bouton "Verrouiller"
-
 export default function HomeScreen({ onLock }: any) {
+  const isDarkMode = useColorScheme() === 'dark';
+  const theme = isDarkMode ? DarkTheme : LightTheme;
+
   return (
-    <View style={styles.container}>
-      {/* ============================================ */}
-      {/* TITRE DE SUCCÈS */}
-      {/* ============================================ */}
-      <Text style={styles.title}>✅ Déverrouillé!</Text>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]}>
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
       
-      {/* ============================================ */}
-      {/* SOUS-TITRE */}
-      {/* ============================================ */}
-      <Text style={styles.subtitle}>Bienvenue dans l'app 🎉</Text>
+      <View style={styles.content}>
+        <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <Text style={styles.icon}>🔓</Text>
+          <Text style={[styles.title, { color: theme.text }]}>Déverrouillé</Text>
+          <Text style={[styles.subtitle, { color: theme.textMuted }]}>
+            Vous avez accès à toutes les fonctionnalités de l'application.
+          </Text>
+        </View>
+
+        <TouchableOpacity 
+          style={[styles.button, { backgroundColor: theme.danger }]} 
+          onPress={() => {
+            lockApp();
+            onLock?.();
+          }}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.buttonText}>🔒 Verrouiller maintenant</Text>
+        </TouchableOpacity>
+      </View>
       
-      {/* ============================================ */}
-      {/* BOUTON REVERROUILLER */}
-      {/* ============================================ */}
-      <TouchableOpacity 
-        style={styles.button} 
-        onPress={() => {
-          lockApp(); // Mettre à jour l'état global
-          onLock?.(); // Naviguer vers LockScreen
-        }}
-      >
-        <Text style={styles.buttonText}>🔒 Verrouiller</Text>
-      </TouchableOpacity>
-    </View>
+      <View style={styles.footer}>
+        <Text style={[styles.footerText, { color: theme.textMuted }]}>
+          Session active • Unlocked V3
+        </Text>
+      </View>
+    </SafeAreaView>
   );
 }
 
-// ============================================
-// STYLES
-// ============================================
+const LightTheme = {
+  bg: '#F8FAFC',
+  card: '#FFFFFF',
+  text: '#0F172A',
+  textMuted: '#64748B',
+  border: '#E2E8F0',
+  danger: '#EF4444',
+};
+
+const DarkTheme = {
+  bg: '#020617',
+  card: '#0F172A',
+  text: '#F8FAFC',
+  textMuted: '#94A3B8',
+  border: '#1E293B',
+  danger: '#DC2626',
+};
+
 const styles = StyleSheet.create({
-  // Container: fond blanc qui remplit tout
   container: { 
     flex: 1, 
+  },
+  content: {
+    flex: 1,
     justifyContent: 'center', 
     alignItems: 'center', 
-    gap: 20, 
-    backgroundColor: '#fff' 
+    paddingHorizontal: 32,
+    gap: 32,
   },
-  
-  // Titre: "✅ Déverrouillé!"
+  card: {
+    width: '100%',
+    padding: 32,
+    borderRadius: 32,
+    borderWidth: 1,
+    alignItems: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+  },
+  icon: {
+    fontSize: 48,
+    marginBottom: 20,
+  },
   title: { 
     fontSize: 28, 
-    fontWeight: 'bold' 
+    fontWeight: '900',
+    letterSpacing: -0.5,
+    textAlign: 'center',
   },
-  
-  // Sous-titre: "Bienvenue dans l'app 🎉"
   subtitle: { 
     fontSize: 16, 
-    color: '#666' // Gris
+    textAlign: 'center',
+    marginTop: 12,
+    lineHeight: 22,
   },
-  
-  // Bouton: "🔒 Verrouiller"
   button: { 
-    backgroundColor: '#FF3B30', // Rouge pour indiquer "danger/verrouiller"
-    padding: 15, 
-    borderRadius: 8, 
-    width: 220, 
-    alignItems: 'center' 
+    paddingVertical: 18, 
+    paddingHorizontal: 32,
+    borderRadius: 16, 
+    width: '100%', 
+    alignItems: 'center',
+    elevation: 2,
   },
-  
-  // Texte du bouton
   buttonText: { 
     color: '#fff', 
-    fontWeight: 'bold', 
-    fontSize: 16 
+    fontWeight: '700', 
+    fontSize: 16,
+    letterSpacing: 0.5,
+  },
+  footer: {
+    paddingBottom: 40,
+    alignItems: 'center',
+  },
+  footerText: {
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   }
 });
+

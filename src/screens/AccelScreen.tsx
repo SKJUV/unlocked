@@ -38,7 +38,6 @@ export default function AccelScreen({ onSuccess, onBack }: any) {
   const [success, setSuccess] = useState(false);
   
   const lastAccel = useRef({ x: 0, y: 0, z: 0 });
-  const lastGyro = useRef({ x: 0, y: 0, z: 0 });
   const lastShakeTime = useRef(0);
 
   // Animations
@@ -51,7 +50,6 @@ export default function AccelScreen({ onSuccess, onBack }: any) {
     const req = calculateShakesNeeded();
     setRequired(req);
     
-    // Démarrer l'apparition
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 800,
@@ -67,49 +65,32 @@ export default function AccelScreen({ onSuccess, onBack }: any) {
     if (success || required === 0) return;
 
     const accelModule = NativeModules.RNSensorsAccelerometer;
-    const gyroModule = NativeModules.RNSensorsGyroscope;
 
-    if (!accelModule || !gyroModule) return;
+    if (!accelModule) return;
 
     accelModule.setUpdateInterval(50);
-    gyroModule.setUpdateInterval(50);
     accelModule.startUpdates();
-    gyroModule.startUpdates();
 
     const subAccel = DeviceEventEmitter.addListener('RNSensorsAccelerometer', (data) => {
       lastAccel.current = data;
       checkShakeStatus();
     });
 
-    const subGyro = DeviceEventEmitter.addListener('RNSensorsGyroscope', (data) => {
-      lastGyro.current = data;
-      checkShakeStatus();
-    });
-
     return () => {
       accelModule.stopUpdates();
-      gyroModule.stopUpdates();
       subAccel.remove();
-      subGyro.remove();
     };
   }, [required, success]);
 
   const checkShakeStatus = () => {
     const { x, y, z } = lastAccel.current;
-    const { x: gx, y: gy, z: gz } = lastGyro.current;
     
-    // Calcul des magnitudes
-    const magnitudeAccel = Math.sqrt(x * x + y * y + z * z);
-    const magnitudeGyro = Math.sqrt(gx * gx + gy * gy + gz * gz);
+    // Magnitude Accéléromètre uniquement (version stable)
+    const magnitude = Math.sqrt(x * x + y * y + z * z);
     const now = Date.now();
 
-    // Seuil de détection assoupli :
-    // - Accélération > 14 (mouvement plus souple)
-    // - On autorise la détection même sans gyroscope (si gyro = 0 car absent)
-    const isShakingLinear = magnitudeAccel > 14;
-    const isRotating = magnitudeGyro > 1.5 || magnitudeGyro === 0; // Fallback si pas de gyro
-
-    if (isShakingLinear && isRotating && (now - lastShakeTime.current > 300)) {
+    // Seuil de détection (15.0)
+    if (magnitude > 15 && (now - lastShakeTime.current > 250)) {
       lastShakeTime.current = now;
       handleShake();
     }
@@ -120,19 +101,19 @@ export default function AccelScreen({ onSuccess, onBack }: any) {
 
     Animated.parallel([
       Animated.sequence([
-        Animated.timing(shakeAnim, { toValue: -20, duration: 40, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 20, duration: 40, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 0, duration: 40, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: -15, duration: 50, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: 15, duration: 50, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
       ]),
       Animated.sequence([
-        Animated.spring(scaleAnim, { toValue: 1.15, friction: 2, useNativeDriver: true }),
-        Animated.spring(scaleAnim, { toValue: 1, friction: 2, useNativeDriver: true }),
+        Animated.spring(scaleAnim, { toValue: 1.1, friction: 3, useNativeDriver: true }),
+        Animated.spring(scaleAnim, { toValue: 1, friction: 3, useNativeDriver: true }),
       ])
     ]).start();
 
     setShakeCount(prev => {
       const newCount = prev + 1;
-      Animated.spring(progressAnim, { toValue: newCount / required, friction: 5, useNativeDriver: false }).start();
+      Animated.spring(progressAnim, { toValue: newCount / required, friction: 6, useNativeDriver: false }).start();
       if (newCount >= required) handleSuccess();
       return newCount;
     });
@@ -166,14 +147,21 @@ export default function AccelScreen({ onSuccess, onBack }: any) {
       <View style={styles.topSection}>
         <Text style={[styles.title, { color: theme.text }]}>Sécurité</Text>
         <Text style={[styles.subtitle, { color: theme.textMuted }]}>
-          Secouez pour confirmer
+          Mouvement requis pour déverrouiller
         </Text>
       </View>
 
       <View style={styles.centerSection}>
         <View style={styles.visualizerContainer}>
           <Svg width={CIRCLE_SIZE} height={CIRCLE_SIZE}>
-            <Circle cx={CIRCLE_SIZE / 2} cy={CIRCLE_SIZE / 2} r={RADIUS} stroke={theme.card} strokeWidth={STROKE_WIDTH} fill="transparent" />
+            <Circle 
+              cx={CIRCLE_SIZE / 2} 
+              cy={CIRCLE_SIZE / 2} 
+              r={RADIUS} 
+              stroke={theme.card} 
+              strokeWidth={STROKE_WIDTH} 
+              fill="transparent" 
+            />
             <AnimatedCircle
               cx={CIRCLE_SIZE / 2}
               cy={CIRCLE_SIZE / 2}
@@ -201,9 +189,9 @@ export default function AccelScreen({ onSuccess, onBack }: any) {
       </View>
 
       <View style={styles.bottomSection}>
-        <View style={[styles.statusPill, { backgroundColor: success ? theme.success : theme.card }]}>
+        <View style={[styles.statusPill, { backgroundColor: success ? theme.success : theme.card, borderColor: theme.border, borderWidth: 1 }]}>
           <Text style={[styles.statusText, { color: success ? '#fff' : theme.text }]}>
-            {success ? '✓ TERMINÉ' : `${required - shakeCount} restants`}
+            {success ? '✓ TERMINÉ' : `${required - shakeCount} secousses`}
           </Text>
         </View>
       </View>
@@ -211,27 +199,45 @@ export default function AccelScreen({ onSuccess, onBack }: any) {
   );
 }
 
-const LightTheme = { bg: '#F8FAFC', card: '#FFFFFF', text: '#0F172A', textMuted: '#64748B', primary: '#2563EB', border: '#E2E8F0', success: '#10B981' };
-const DarkTheme = { bg: '#0F172A', card: '#1E293B', text: '#F8FAFC', textMuted: '#94A3B8', primary: '#3B82F6', border: '#334155', success: '#059669' };
+const LightTheme = { 
+  bg: '#F8FAFC', 
+  card: '#FFFFFF', 
+  text: '#0F172A', 
+  textMuted: '#64748B', 
+  primary: '#3B82F6', 
+  border: '#E2E8F0', 
+  success: '#10B981' 
+};
+
+const DarkTheme = { 
+  bg: '#020617', // Plus sombre (Deep Navy)
+  card: '#0F172A', // Plus sombre
+  text: '#F8FAFC', 
+  textMuted: '#94A3B8', 
+  primary: '#60A5FA', // Bleu plus clair pour contraste
+  border: '#1E293B', 
+  success: '#22C55E' 
+};
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: 24 },
+  container: { flex: 1, paddingHorizontal: width * 0.06 },
   header: { marginTop: 60, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   backButton: { padding: 8, marginLeft: -8 },
   backText: { fontSize: 16, fontWeight: '600' },
   dayText: { fontSize: 14, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
-  topSection: { marginTop: 40, alignItems: 'center' },
-  title: { fontSize: 32, fontWeight: '900' },
-  subtitle: { fontSize: 16, textAlign: 'center', marginTop: 12, maxWidth: '80%' },
+  topSection: { marginTop: 30, alignItems: 'center' },
+  title: { fontSize: 36, fontWeight: '900', letterSpacing: -0.5 },
+  subtitle: { fontSize: 16, textAlign: 'center', marginTop: 10, maxWidth: '80%', lineHeight: 22 },
   centerSection: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   visualizerContainer: { width: CIRCLE_SIZE, height: CIRCLE_SIZE, justifyContent: 'center', alignItems: 'center' },
   iconWrapper: { position: 'absolute' },
-  deviceFrame: { width: 110, height: 190, borderRadius: 24, borderWidth: 4, alignItems: 'center', justifyContent: 'center' },
-  deviceSpeaker: { width: 40, height: 4, borderRadius: 2, position: 'absolute', top: 15 },
-  deviceButton: { width: 34, height: 34, borderRadius: 17, borderWidth: 2, position: 'absolute', bottom: 12 },
+  deviceFrame: { width: width * 0.28, height: width * 0.48, borderRadius: 24, borderWidth: 3, alignItems: 'center', justifyContent: 'center', elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 20 },
+  deviceSpeaker: { width: 40, height: 4, borderRadius: 2, position: 'absolute', top: 12 },
+  deviceButton: { width: 30, height: 30, borderRadius: 15, borderWidth: 1.5, position: 'absolute', bottom: 12 },
   countValue: { fontSize: 48, fontWeight: '900' },
-  countLabel: { fontSize: 14, fontWeight: '700', marginTop: -4 },
+  countLabel: { fontSize: 13, fontWeight: '700', marginTop: -2 },
   bottomSection: { marginBottom: 60, alignItems: 'center' },
-  statusPill: { paddingVertical: 14, paddingHorizontal: 28, borderRadius: 30 },
-  statusText: { fontSize: 15, fontWeight: '800' },
+  statusPill: { paddingVertical: 14, paddingHorizontal: 32, borderRadius: 30 },
+  statusText: { fontSize: 15, fontWeight: '800', letterSpacing: 0.5 },
 });
+
