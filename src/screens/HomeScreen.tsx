@@ -5,9 +5,9 @@ import {
   TouchableOpacity, 
   StyleSheet, 
   useColorScheme, 
-  StatusBar,
-  SafeAreaView 
+  StatusBar
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { lockApp } from '../services/auth';
 
 export default function HomeScreen({ onLock }: any) {
